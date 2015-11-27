@@ -1,5 +1,5 @@
 {
-  "name": "kilbourne/biogenaData",
+  "name": "kilbourne/biogena-data",
   "type": "wordpress-plugin",
   "require": {
     "composer/installers": "v1.0.6"
