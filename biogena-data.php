@@ -1,6 +1,6 @@
 <?php
 /*
- * Plugin Name: biogenaData
+ * Plugin Name: biogena-data
  */
 
 class biogenaData
