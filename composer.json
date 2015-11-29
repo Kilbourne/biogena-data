@@ -1,6 +1,6 @@
 {
   "name": "kilbourne/biogena-data",
-  "type": "wordpress-plugin",
+  "type": "wordpress-muplugin",
   "version":"1.0.0",
   "require": {
     "php": ">=5.3.2",
