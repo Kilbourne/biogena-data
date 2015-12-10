@@ -1,4 +1,7 @@
 <?php 
+/*
+* Plugin Name: biogena-data
+*/
 class biogenaData{
   private static $results=array();
   private static function all_data($post_type){
