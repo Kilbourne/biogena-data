@@ -25,7 +25,7 @@ class biogenaData{
         $resp= new stdClass();
         $conn_arr=array();
         if($post_type!=='prodotti'){$connection='patologie_to_linee';}
-        else if($post_type!=='aree-terapeutiche'){$connection='linee_to_prodotti';}
+        else {$connection='linee_to_prodotti';}
         $connected = new WP_Query( array(
           'connected_type' => $connection,
           'connected_items' => $obj,
@@ -38,8 +38,8 @@ class biogenaData{
           $perma=get_permalink ( $right_obj->ID );
           $thumb=get_the_post_thumbnail ( $right_obj->ID );
           if($post_type!=='linee'){
-            if($post_type!=='prodotti'){$connection2='linee_to_prodotti';}
-            else if($post_type!=='aree-terapeutiche'){$connection2='patologie_to_linee';}
+            $connection2='linee_to_prodotti';
+
             $connected2 = get_posts( array(
               'connected_type' => $connection2,
               'connected_items' => $right_obj,
@@ -54,17 +54,33 @@ class biogenaData{
                 $conn_arr[]=$conn;
               }
             }
+            if($post_type!=='aree-terapeutiche'){
+              $connection3='patologie_to_linee';
+               $connected3 = new WP_Query( array(
+                'connected_type' => $connection3,
+                'connected_items' => $right_obj,
+                'nopaging' => true
+              ));
+              if ( $connected3->have_posts()  ){
+                $right_obj3=$connected3->posts[0];
+                $titolo_p=$right_obj3->post_title;          
+                $content_p=$right_obj3->post_content;
+                $perma_p=get_permalink ( $right_obj3->ID );
+                $thumb_p=get_the_post_thumbnail ( $right_obj3->ID );
+              }
+            }
           }else{
-            $connected2 = new WP_Query( array(
+            $connected2 = get_posts( array(
               'connected_type' => 'linee_to_prodotti',
               'connected_items' => $obj,
               'nopaging' => true
             ));
-            if ( count($connected2->posts)>0 ){
-              foreach ( $connected2->posts as $key2=>$right_obj2 ){
-                // echo var_dump($right_obj2);
+
+            if ( $connected2 ){
+              foreach ( $connected2 as $key2=>$right_obj2 ){
                 $conn=new stdClass();
                 $conn->title=$right_obj2->post_title;
+                $conn->content=$right_obj2->post_content;
                 $conn->permalink = get_post_permalink($right_obj2->ID);
                 $conn->thumb=get_the_post_thumbnail($right_obj2->ID,'full');
                 $conn_arr[]=$conn;
@@ -79,6 +95,12 @@ class biogenaData{
       $resp->right_obj_content=$content;
       $resp->right_obj_thumb=$thumb;
       $resp->right_obj_plink=$perma;
+      if($post_type==='prodotti'){
+        $resp->p_title=$titolo_p;
+        $resp->p_content=$content_p;
+        $resp->p_thumb=$thumb_p;
+        $resp->p_plink=$perma_p;
+      }
       /*
       $prevenzione=get_post_meta(  $obj->ID,'prevenzione',true);
       $bits = explode("\n", $prevenzione);
@@ -101,7 +123,7 @@ class biogenaData{
   public static function data($index=null,$post_type='aree-terapeutiche'){
     self::all_data($post_type);
     $count=count(self::$results);
-    if(!is_null($index)){
+    if(!is_null($index)){      
       if(!is_numeric($index)){
         if(!is_string ($index)){
           $connected2 = get_posts( array(
@@ -113,7 +135,8 @@ class biogenaData{
           foreach ( self::$results as $key=>$obj ){          
           
               if (isset($obj->linea_title) && $obj->linea_title===$title){
-                  return $linea;
+                                  $index=$key;
+                break;
               }
           }
       }else{
