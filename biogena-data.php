@@ -4,7 +4,7 @@
 */
 
 class biogenaData{
-  private static $post_types=array('aree-terapeutiche','linee','prodotti');
+  private static $post_types=array('area-skin-care','linee','prodotti');
   private static $results=array();
   private static $results_cache=array();
 private static  function get_obj_info($obj){
@@ -56,7 +56,7 @@ private static function get_obj_connected($obj,$conn){
 
         $result=self::get_obj_info($subject);
         if($key_pt===0){
-          $linea=self::get_obj_connected($subject,'patologie_to_linee');
+          $linea=self::get_obj_connected($subject,'area-skin-care_to_linee');
           if($linea){
             $result['linea']=self::get_obj_info($linea);
             $prodotti=self::get_obj_connected($linea,'linee_to_prodotti');
@@ -81,17 +81,17 @@ private static function get_obj_connected($obj,$conn){
                 }
               }
             }
-            $area_terapeutica=self::get_obj_connected($linea,'patologie_to_linee');
+            $area_terapeutica=self::get_obj_connected($linea,'area-skin-care_to_linee');
             if($area_terapeutica){
-              $result['area_terapeutica']=self::get_obj_info($area_terapeutica);
+              $result['area-skin-care']=self::get_obj_info($area_terapeutica);
             }
           }
         }
         elseif($key_pt===1){
           $prodotti=self::get_obj_connected($subject,'linee_to_prodotti');
-          $area_terapeutica=self::get_obj_connected($subject,'patologie_to_linee');
+          $area_terapeutica=self::get_obj_connected($subject,'area-skin-care_to_linee');
           if($area_terapeutica){
-            $result['area_terapeutica']=self::get_obj_info($area_terapeutica);
+            $result['area-skin-care']=self::get_obj_info($area_terapeutica);
           }
           if($prodotti){
             $result['prodotti']=array();
