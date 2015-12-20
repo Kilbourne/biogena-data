@@ -2,18 +2,49 @@
 /*
 * Plugin Name: biogena-data
 */
+
 class biogenaData{
+  private static $post_types=array('aree-terapeutiche','linee','prodotti');
   private static $results=array();
-  private static function all_data($post_type){
-    $data=get_transient( 'biogena_data_'.$post_type);
-    if (empty($data)) {
-        return self::create($post_type);        
-     }else{
-        return self::$results=$data;      
-     }
+  private static $results_cache=array();
+private static  function get_obj_info($obj){
+  
+  $cache=(isset(self::$results_cache[$obj->ID]) || array_key_exists($obj->ID,self::$results_cache))?self::$results_cache[$obj->ID]:false;
+  
+  if (!$cache){
+    $result=array();
+    $result["title"]=$obj->post_title;
+    $result["permalink"]=get_permalink ( $obj->ID );
+    $result["content"]=$obj->post_content;
+    $result["thumbnail"]=get_the_post_thumbnail ( $obj->ID );
+    $result["fields"]=get_fields($obj->ID);
+    self::$results_cache[$obj->ID]=$result;
+    return $result;
+  }else
+  {
+   return $cache; 
   }
+}
+
+private static function get_obj_connected($obj,$conn){
+  
+          $cache=(isset(self::$results_cache['c_'.$obj->ID.'_c_'.$conn]) || array_key_exists('c_'.$obj->ID.'_c_'.$conn,self::$results_cache))?self::$results_cache['c_'.$obj->ID.'_c_'.$conn]:false;
+  if (!$cache){
+        $connected = get_posts( array(
+          'connected_type' => $conn,
+          'connected_items' => $obj
+        ));
+        $result=count($connected)===1?$connected[0]:$connected;
+        self::$results_cache['c_'.$obj->ID.'_c_'.$conn]=$result;
+        return $result;
+      }else{
+   return $cache; 
+  }
+}
+
   private static function create($post_type){
-      self::$results=array();
+      $key_pt=array_search($post_type, self::$post_types);      
+      self::$results[$post_type]=array();
       $args = array(
         'posts_per_page'   => -1,
         'orderby'          => 'title',
@@ -21,145 +52,91 @@ class biogenaData{
         'post_type'        => $post_type,
       );
       $posts_array = get_posts( $args );
-      foreach ( $posts_array as $key=>$obj ){
-        $resp= new stdClass();
-        $conn_arr=array();
-        if($post_type!=='prodotti'){$connection='patologie_to_linee';}
-        else {$connection='linee_to_prodotti';}
-        $connected = new WP_Query( array(
-          'connected_type' => $connection,
-          'connected_items' => $obj,
-          'nopaging' => true
-        ));
-        if ( $connected->have_posts() ){
-          $right_obj=$connected->posts[0];
-          $titolo=$right_obj->post_title;          
-          $content=$right_obj->post_content;
-          $perma=get_permalink ( $right_obj->ID );
-          $thumb=get_the_post_thumbnail ( $right_obj->ID );
-          if($post_type!=='linee'){
-            $connection2='linee_to_prodotti';
+      foreach ( $posts_array as $key_s =>$subject ){
 
-            $connected2 = get_posts( array(
-              'connected_type' => $connection2,
-              'connected_items' => $right_obj,
-              'nopaging' => true
-            ));
-            if ( count($connected2)>0 ){
-              foreach ( $connected2 as $key2=>$right_obj2 ){
-                $conn=new stdClass();
-                $conn->title=$right_obj2->post_title;
-                $conn->permalink = get_post_permalink($right_obj2->ID);
-                $conn->thumb=get_the_post_thumbnail($right_obj2->ID,'full');
-                $conn_arr[]=$conn;
-              }
-            }
-            if($post_type!=='aree-terapeutiche'){
-              $connection3='patologie_to_linee';
-               $connected3 = new WP_Query( array(
-                'connected_type' => $connection3,
-                'connected_items' => $right_obj,
-                'nopaging' => true
-              ));
-              if ( $connected3->have_posts()  ){
-                $right_obj3=$connected3->posts[0];
-                $titolo_p=$right_obj3->post_title;          
-                $content_p=$right_obj3->post_content;
-                $perma_p=get_permalink ( $right_obj3->ID );
-                $thumb_p=get_the_post_thumbnail ( $right_obj3->ID );
-              }
-            }
-          }else{
-            $connected2 = get_posts( array(
-              'connected_type' => 'linee_to_prodotti',
-              'connected_items' => $obj,
-              'nopaging' => true
-            ));
-
-            if ( $connected2 ){
-              foreach ( $connected2 as $key2=>$right_obj2 ){
-                $conn=new stdClass();
-                $conn->title=$right_obj2->post_title;
-                $conn->content=$right_obj2->post_content;
-                $conn->permalink = get_post_permalink($right_obj2->ID);
-                $conn->thumb=get_the_post_thumbnail($right_obj2->ID,'full');
-                $conn_arr[]=$conn;
+        $result=self::get_obj_info($subject);
+        if($key_pt===0){
+          $linea=self::get_obj_connected($subject,'patologie_to_linee');
+          if($linea){
+            $result['linea']=self::get_obj_info($linea);
+            $prodotti=self::get_obj_connected($linea,'linee_to_prodotti');
+            if($prodotti){
+              $result['prodotti']=array();
+              foreach ($prodotti as $key_prod => $prodotto) {
+                $result['prodotti'][]=self::get_obj_info($prodotto);
               }
             }
           }
-        }        
-      $resp->title = $obj->post_title;
-      $resp->permalink = get_post_permalink($obj->ID);
-      $resp->thumb=get_the_post_thumbnail(  $obj->ID,'full');
-      $resp->right_obj_title=$titolo;
-      $resp->right_obj_content=$content;
-      $resp->right_obj_thumb=$thumb;
-      $resp->right_obj_plink=$perma;
-      if($post_type==='prodotti'){
-        $resp->p_title=$titolo_p;
-        $resp->p_content=$content_p;
-        $resp->p_thumb=$thumb_p;
-        $resp->p_plink=$perma_p;
-      }
-      /*
-      $prevenzione=get_post_meta(  $obj->ID,'prevenzione',true);
-      $bits = explode("\n", $prevenzione);
-      $newstring = "<ul>";
-      foreach($bits as $bit)
-      {
-        $newstring .= "<li><span>" . $bit . "</span></li>";
-      }
-      $newstring .= "</ul>";
-      $resp->prevenzione= $newstring;
-      */
-      if($post_type==='aree-terapeutiche'){ $resp->prevenzione= get_post_meta(  $obj->ID,'prevenzione',true);}
-      $resp->conn_arr=$conn_arr;
-      $resp->content=$obj->post_content;
-      self::$results[]=$resp;
-    };
-    wp_reset_postdata();
-    set_transient( 'biogena_data_'.$post_type, self::$results, 60 * 60 * 24 );
-  }
-  public static function data($index=null,$post_type='aree-terapeutiche'){
-    self::all_data($post_type);
-    $count=count(self::$results);
-    if(!is_null($index)){      
-      if(!is_numeric($index)){
-        if(!is_string ($index)){
-          $connected2 = get_posts( array(
-                'connected_type' => 'linee_to_prodotti',
-                'connected_items' => $index,
-                'nopaging' => true
-          ));
-          if(!empty($connected2)){$linea=$connected2[0];$title=$linea->post_title;}
-          foreach ( self::$results as $key=>$obj ){          
-          
-              if (isset($obj->linea_title) && $obj->linea_title===$title){
-                                  $index=$key;
-                break;
+        }
+        elseif($key_pt===2){
+          $linea=self::get_obj_connected($subject,'linee_to_prodotti');
+          if($linea){
+            $result['linea']=self::get_obj_info($linea);
+            $prodotti=self::get_obj_connected($linea,'linee_to_prodotti');
+            if($prodotti){
+              $result['prodotti']=array();
+              foreach ($prodotti as $key_prod => $prodotto) {
+                if($prodotto->post_title!==$result['title']){ 
+                  $result['prodotti'][]=self::get_obj_info($prodotto);
+                }
               }
+            }
+            $area_terapeutica=self::get_obj_connected($linea,'patologie_to_linee');
+            if($area_terapeutica){
+              $result['area_terapeutica']=self::get_obj_info($area_terapeutica);
+            }
           }
-      }else{
-         foreach ( self::$results as $key=>$obj ){    
-
-              if (isset($obj->permalink) && $obj->permalink===$index) {
-                $index=$key;
-                break;
-              }
+        }
+        elseif($key_pt===1){
+          $prodotti=self::get_obj_connected($subject,'linee_to_prodotti');
+          $area_terapeutica=self::get_obj_connected($subject,'patologie_to_linee');
+          if($area_terapeutica){
+            $result['area_terapeutica']=self::get_obj_info($area_terapeutica);
           }
-        }          
+          if($prodotti){
+            $result['prodotti']=array();
+            foreach ($prodotti as $key_prod => $prodotto) {
+              $result['prodotti'][]=self::get_obj_info($prodotto);
+            }
+          }
+        }
+        self::$results[$post_type][$result['title']]=$result;
         
       }
+      set_transient( 'biogena_data_'.$post_type, self::$results[$post_type], 60 * 60 * 24 );
 
-    $next=($index+1)<$count?$index+1:0;
-    $prev=($index-1)>-1?($index-1):$count-1;
-    $results=new stdClass();
-    $results->first=self::$results[$index];
-    $results->next=self::$results[$next];
-    $results->prev=self::$results[$prev];
-    }else{
-      $results=self::$results;
-    }
-    return $results;
   }
+  public static function data($post_type=null,$index=null,$tree=false,$by_index=false){
+    $data=get_transient( 'biogena_data_'.$post_type);
+    if (empty($data)) {
+         self::create($post_type);                
+         $data=self::$results[$post_type];
+
+     }
+    if($index===null) {
+
+      return $data;
+
+    }else{
+      if( $tree || (!$tree && $by_index  ) )$keys=array_keys($data);      
+      if(!$tree){
+          if($by_index) {            
+            return $data[$keys[$index]];
+          }else{
+            return $data[$index];
+          }
+      }else{
+        $count=count($data);
+        $n_index=$by_index?$index:array_search($index, $keys);        
+        $next=($n_index+1)<$count?$n_index+1:0;
+        $prev=($n_index-1)>-1?($n_index-1):$count-1;
+        $obj=new stdClass();
+        $obj->first=$data[$keys[$n_index]];
+        $obj->prev=$data[$keys[$prev]];
+        $obj->next=$data[$keys[$next]];
+        return $obj;
+      }
+     }
+  
+    }
 }
