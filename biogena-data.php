@@ -15,7 +15,7 @@ private static  function get_obj_info($obj){
     $result=array();
     $result["title"]=$obj->post_title;
     $result["permalink"]=get_permalink ( $obj->ID );
-    $result["content"]=$obj->post_content;
+    $result["content"]=wpautop($obj->post_content,true);
     $result["thumbnail"]=get_the_post_thumbnail ( $obj->ID );
     $result["fields"]=get_fields($obj->ID);
     self::$results_cache[$obj->ID]=$result;
@@ -88,10 +88,13 @@ private static function get_obj_connected($obj,$conn){
           }
         }
         elseif($key_pt===1){
+          if(  $result['title']==='Specialità Medicinali' ) continue;
           $prodotti=self::get_obj_connected($subject,'linee_to_prodotti');
+          if($result['title']!=='Osmin'){
           $area_terapeutica=self::get_obj_connected($subject,'area-skin-care_to_linee');
           if($area_terapeutica){
             $result['area-skin-care']=self::get_obj_info($area_terapeutica);
+          }
           }
           if($prodotti){
             $result['prodotti']=array();
@@ -100,14 +103,27 @@ private static function get_obj_connected($obj,$conn){
             }
           }
         }
-        self::$results[$post_type][$result['title']]=$result;
-        
+
+        if($result['title']==='Osmin'){
+       
+          self::$results['area-baby']=array();
+          self::$results['area-baby'][$result['title']]=$result;
+          set_transient( 'biogena_data_area-baby', self::$results['area-baby'], 60 * 60 * 24 );
+       
+          
+        }else{      
+          self::$results[$post_type][$result['title']]=$result;
+        }
       }
-      set_transient( 'biogena_data_'.$post_type, self::$results[$post_type], 60 * 60 * 24 );
+          set_transient( 'biogena_data_'.$post_type, self::$results[$post_type], 60 * 60 * 24 );    
+       
+      
 
   }
   public static function data($post_type=null,$index=null,$tree=false,$by_index=false){
-    $data=get_transient( 'biogena_data_'.$post_type);
+    if($index ==='Osmin'){$data=get_transient( 'biogena_data_area-baby');}else
+    {$data=get_transient( 'biogena_data_'.$post_type);}
+    
     if (empty($data)) {
          self::create($post_type);                
          $data=self::$results[$post_type];
