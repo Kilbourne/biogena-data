@@ -32,8 +32,10 @@ private static function get_obj_connected($obj,$conn){
   if (!$cache){
         $connected = get_posts( array(
           'connected_type' => $conn,
-          'connected_items' => $obj
+          'connected_items' => $obj,
+          'posts_per_page'=>-1
         ));
+        
         $result=count($connected)===1?$connected[0]:$connected;
         self::$results_cache['c_'.$obj->ID.'_c_'.$conn]=$result;
         return $result;
@@ -59,11 +61,15 @@ private static function get_obj_connected($obj,$conn){
           $linea=self::get_obj_connected($subject,'area-skin-care_to_linee');
           if($linea){
             $result['linea']=self::get_obj_info($linea);
-            $prodotti=self::get_obj_connected($linea,'linee_to_prodotti');
-            if($prodotti){
+            $prodotti=self::get_obj_connected($linea,'linee_to_prodotti');          
+            if($prodotti){              
               $result['prodotti']=array();
-              foreach ($prodotti as $key_prod => $prodotto) {
-                $result['prodotti'][]=self::get_obj_info($prodotto);
+              if(count($prodotti)>1){
+                foreach ($prodotti as $key_prod => $prodotto) {
+                  $result['prodotti'][]=self::get_obj_info($prodotto);
+                }
+              }else{
+                $result['prodotti'][]=self::get_obj_info($prodotti);
               }
             }
           }
@@ -75,11 +81,18 @@ private static function get_obj_connected($obj,$conn){
             $prodotti=self::get_obj_connected($linea,'linee_to_prodotti');
             if($prodotti){
               $result['prodotti']=array();
+                          if(count($prodotti)>1){
               foreach ($prodotti as $key_prod => $prodotto) {
                 if($prodotto->post_title!==$result['title']){ 
                   $result['prodotti'][]=self::get_obj_info($prodotto);
                 }
               }
+            }else{
+               if($prodotto->post_title!==$result['title']){ 
+                $result['prodotti'][]=self::get_obj_info($prodotti);
+                }                
+            }  
+              
             }
             $area_terapeutica=self::get_obj_connected($linea,'area-skin-care_to_linee');
             if($area_terapeutica){
@@ -88,9 +101,10 @@ private static function get_obj_connected($obj,$conn){
           }
         }
         elseif($key_pt===1){
-          if(  $result['title']==='Specialità Medicinali' ) continue;
+//          if(  $result['title']==='Specialità Medicinali' ) continue;
           $prodotti=self::get_obj_connected($subject,'linee_to_prodotti');
           if($result['title']!=='Osmin'){
+
           $area_terapeutica=self::get_obj_connected($subject,'area-skin-care_to_linee');
           if($area_terapeutica){
             $result['area-skin-care']=self::get_obj_info($area_terapeutica);
@@ -98,9 +112,13 @@ private static function get_obj_connected($obj,$conn){
           }
           if($prodotti){
             $result['prodotti']=array();
-            foreach ($prodotti as $key_prod => $prodotto) {
-              $result['prodotti'][]=self::get_obj_info($prodotto);
-            }
+            if(count($prodotti)>1){
+              foreach ($prodotti as $key_prod => $prodotto) {
+                $result['prodotti'][]=self::get_obj_info($prodotto);
+              }
+            }else{
+                $result['prodotti'][]=self::get_obj_info($prodotti);
+            }  
           }
         }
 
