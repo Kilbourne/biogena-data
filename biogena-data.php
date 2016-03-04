@@ -167,7 +167,7 @@ private static function get_obj_connected($obj,$conn,$kp,$one=true,$inverse=fals
           //if($key_s===count($posts_array)-1)      d(self::$results_cache);  
         }
 
-        if($result['title']==='Linea Osmin'){
+        if($result['title']===__('Linea Osmin','sage')){
        
           self::$results['area-baby']=array();
           self::$results['area-baby'][$result['title']]=$result;
@@ -184,7 +184,7 @@ private static function get_obj_connected($obj,$conn,$kp,$one=true,$inverse=fals
 
   }
   public static function data($post_type=null,$index=null,$tree=false,$by_index=false){
-    if($index ==='Linea Osmin'){$data=get_transient( 'biogena_data_area-baby');}else
+    if($index ===__('Linea Osmin','sage')){$data=get_transient( 'biogena_data_area-baby');}else
     {$data=get_transient( 'biogena_data_'.$post_type);}
     
     if (empty($data)) {
