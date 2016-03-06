@@ -20,6 +20,57 @@ private static  function get_obj_info($obj,$kp){
     $result["content"]=wpautop($obj->post_content,true);
     $result["thumbnail"]=get_the_post_thumbnail ( $obj->ID );
     $result["fields"]=get_fields($obj->ID);
+    $result["lang"]=array();
+    $object2  =new MslsOptionsPost($obj->ID);
+    $blogs=MslsBlogCollection::instance();
+
+
+
+
+foreach ($blogs->get() as $blog) {
+$blog_id=$blog->userblog_id;
+$title=$blog->get_language();
+$langname = $blog->get_description();
+$url=$object2->get_postlink($title);
+$current  = ( $blog_id == MslsBlogCollection::instance()->get_current_blog_id() );
+
+
+
+
+if(!$current){
+
+  switch_to_blog( $blog_id );
+  
+  $url=$object2->get_postlink($title);
+restore_current_blog();
+}
+
+    if ( 'en_GB' == $title ) {
+        $url = str_replace( '/prodotti/', '/products/', $url );
+        $url = str_replace( '/area-skin-care/', '/skin-care-area/', $url );
+        $url = str_replace( '/linee/', '/lines/', $url );
+    }elseif ( 'it_IT' == $title ) {
+        $url = str_replace( '/products/','/prodotti/' , $url );
+        $url = str_replace(  '/skin-care-area/','/area-skin-care/', $url );
+        $url = str_replace( '/lines/', '/linee/', $url );
+    }
+
+$result["lang"][$langname]=$url;
+
+}
+    /*
+    $object  = new MslsOutput();
+$display = 1;
+$exists  = false;
+
+foreach ( $object->get( $display, $exists ) as $link ) {
+ $a = new SimpleXMLElement($link);
+ $title=(string)$a['title'];
+ $href=(string)$a['href'];
+$result["lang"][$title]=$href;
+
+}
+*/
     self::$results_cache[$obj->ID]=$result;
     if($kp===0 ){
       if(!isset(self::$results_cache['linee'])){self::$results_cache['inverse']=array();}
