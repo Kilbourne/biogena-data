@@ -164,6 +164,26 @@ private static function get_obj_connected($obj,$conn,$kp,$one=true,$inverse=fals
 
             }
           }
+              $area_post=  get_posts(array('numberposts' => 4,
+'category_name'=>sanitize_title(get_the_title( $subject->ID))));
+$result['posts']=[];
+            if($area_post){
+
+              foreach ($area_post as $key => $postetto) {
+                $postet_id=$postetto->ID;
+                $postetto_res=[];
+                $postetto_res['img']=get_the_post_thumbnail($postet_id);
+                $postetto_res['permalink']=get_permalink($postet_id);
+                $postetto_res['title']=get_the_title( $postet_id );
+                $postetto_res['excerpt']=wp_trim_words( $postetto->post_content);
+                $result['posts'][]=$postetto_res;
+              }
+              $category_link = get_category_link(get_cat_ID( get_the_title( ) )); 
+              $result['categoryLink']=$category_link;
+              $category = get_term_by('name',get_the_title( ), 'category');
+              $posts_in_category = $category->count;
+              $result['more_than_four']=$posts_in_category>4;
+            }
              // if($key_s===count($posts_array)-1)    d(self::$results_cache);
         }
         elseif($key_pt===2){
@@ -215,6 +235,10 @@ private static function get_obj_connected($obj,$conn,$kp,$one=true,$inverse=fals
               }
 
           }
+
+        
+
+             
           //if($key_s===count($posts_array)-1)      d(self::$results_cache);  
         }
 
