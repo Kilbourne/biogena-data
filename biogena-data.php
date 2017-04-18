@@ -175,7 +175,7 @@ $result['posts']=[];
                 $postetto_res['img']=get_the_post_thumbnail($postet_id);
                 $postetto_res['permalink']=get_permalink($postet_id);
                 $postetto_res['title']=get_the_title( $postet_id );
-                $postetto_res['excerpt']=wp_trim_words( $postetto->post_content);
+                $postetto_res['excerpt']=apply_filters('the_excerpt', get_post_field('post_excerpt', $postet_id));
                 $result['posts'][]=$postetto_res;
               }
               $category_link = get_category_link(get_cat_ID( get_the_title( ) )); 
